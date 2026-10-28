@@ -3,15 +3,17 @@
 """技能重构后的无损校验：旧 SKILL.md 的每条行首加粗结论，必须在新结构里找到。
 
 用法：
-  python3 verify_skill_migration.py <旧 SKILL.md> <技能目录>
-  python3 verify_skill_migration.py SKILL.old.md /root/.hermes/skills/productivity/layout-json-to-epub
+    python3 verify_skill_migration.py <旧 SKILL.md> <技能目录>
 
-技能目录里会扫描 SKILL.md + references/mechanisms/*.md + references/*.md。
+例：
+    python3 verify_skill_migration.py SKILL.old.md ~/.hermes/skills/productivity/layout-json-to-epub
+
+扫描技能目录下的 SKILL.md + references/mechanisms/*.md + references/*.md。
 退出码 0 = 全部命中；1 = 有遗漏（逐条打印，必须补完再交付）。
 
 为什么需要它：把 SKILL.md 拆成 mechanisms/ 时，条目靠脚本分桶 + 人工复核，
 漏条不会报错、也不会被下一次 skill_view 发现——只能靠机械比对兜住。
-上一次重构基线：旧版 298 条行首加粗结论、402 条条目 → 新版 355 条条目、0 丢失。
+上一次重构基线：旧版 298 条行首加粗结论、402 条条目 → 新版 392 条条目、0 丢失。
 """
 import glob
 import os

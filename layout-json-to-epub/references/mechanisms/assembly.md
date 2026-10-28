@@ -6,6 +6,15 @@
 
 > 本篇内容自 SKILL.md 拆出，条目逐字保留（含实测数字与原节出处）。
 
+## 相关篇
+
+> 一条结论常跨两个机制：**正文只在主归属那篇写一份**，这里只放指针。
+
+- **M3** —— 双向脚注锚点与跨文件修正
+- **M7** —— `#`/`##`/`###` 层级与 `--toc-depth` 的配合
+- **M9** —— epubcheck 通过后仍要抽读 xhtml
+- **M1** —— 成品体积与 Telegram 20 MB 上限
+
 ## 来自「教科书（MathML 公式 + HTML 表格 + 页面圈码脚注 + 缺失插图）」
 
 - **pandoc 默认 EPUB CSS 没有 `img` 规则**：900px 宽的插图在手机上溢出 → 注入 `img { max-width:100%; height:auto; }` + `p > img { display:block; margin:.8em auto; }`
@@ -46,11 +55,13 @@
 
 - **交付前必须同步 /tmp 副本**：重新生成 EPUB 后 `cp` 到 /tmp 并 md5sum 对比；用户通过 Telegram 下载的是 /tmp 路径，旧副本会导致用户看到旧格式并误报"格式乱了/换行没了"（本会话两次因此误报）；**改了 extract.py 必须重跑 extract.py 重建 pages.json**——只跑 build.py 用的是旧 pages.json，改动静默无效，交付出去还是旧内容
 - **文件过大投诉：先看字节数再下结论（本会话教训）**：Telegram 机器人收发上限 **20 MB**。用户上传超限时平台回执会作为**入站消息**转给 agent（"The document is too large or its size could not be verified. Maximum: 20 MB."），gateway.log 同时记 `[Telegram] Document too large: <bytes>`。**先拿日志里的字节数跟自己发出去的/对方声称的文件大小比对**——本例 115,269,237 字节显然是用户那个 zip 被拒，不是自己 841 KB 的 EPUB 投递失败（曾误判成"中文/全角文件名导致投递失败"并白白换名重发一次）。用户说"文件已发给你"而 `~/.hermes/cache/documents/` 里没有新文件时，先查 `grep 'Document too large' ~/.hermes/logs/gateway.log` 再回复，别让对方重复上传
+  - 双归属 → **M1**（附件与体积属于输入协作）
 - **`<br>` 必须写成自闭合 `<br/>`**：markdown 里的裸 HTML `<br>` 会被 pandoc 原样输出到 XHTML，`xml.etree` 解析报 mismatched tag（EPUB 校验才暴露，pandoc exit 0）。诗行/署名行分组时尤其容易踩。
 - **raw HTML 表格内的脚注要用 HTML 锚点**：pandoc 不解析 raw HTML 里的 markdown（表格单元格里的 `[^id]` 不会生效）→ 星号表注写成 `<a href="#tn{页}-{i}"><sup>&#42;</sup></a>` + 表后 `<a id="tn{页}-{i}"></a>` 注释行；同一条注被两格引用时**复用第一个锚点**并只输出一次注文。
 - **pandoc 块识别需要空行**：`**§ N**` 标题、`> **说明**` 引用块、`#` 标题前后都必须有空行，否则 pandoc 把它们并进前一段，渲染成字面文本（`&gt;`）或整段粘连——render 函数里每个段落/标题后都要 append('')
 - **pandoc 段落开头数字+点 → 有序列表**：段落以 `2. ` 开头会被解析为 `<ol>`，且段内 `(a) (b)` 子项会嵌套列表导致标签不匹配（XML 校验报 mismatched tag）。修复：render 时 `re.sub(r'^(\d+)\.\s', r'\1\\. ', text)` 转义
 - **EPUB 双向跳转脚注（用户要求，勿只输出死文本上标）**：用户问"脚注注释没配置？"说明上标必须是**可点击链接**，不是纯 `<sup>` 文本：
+  - 双归属 → **M3**（锚点命名与配对规则在 M3）
   - **markdown 阶段生成锚点链接**（mdgen.py）：
     - 正文数字标记：`<a id="chN-ref-M" href="#chN-note-M"><sup>M</sup></a>`（id 是返回锚点）
     - 正文星号译注：`<a href="#chN-tr"><sup>★</sup></a>`（本章译注区）

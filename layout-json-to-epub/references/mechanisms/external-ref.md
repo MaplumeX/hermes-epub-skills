@@ -6,10 +6,18 @@
 
 > 本篇内容自 SKILL.md 拆出，条目逐字保留（含实测数字与原节出处）。
 
+## 相关篇
+
+> 一条结论常跨两个机制：**正文只在主归属那篇写一份**，这里只放指针。
+
+- **M3** —— 补回缺失标记（英文原文/DJVU/扫描页三条路径）
+- **M7** —— 德文标题结构提取与层级判定
+
 ## 来自「尾注（附注）制 + 跨册合订（本册无注释文本）」
 
 - **英文原书对不上版本时，编号不可搬运**：用户给的「英文原文」可能是**另一版**（本例中译据 1982 年第 1 版，用户给的是 2010 年第 4 版，且改成了页底脚注）。实测编号偏移（中译第7章注10=英文注13、第13章注3=英文注14…）。可用做法：先做**中英附注对照表**（引证前缀在英文文本里的命中次数），再按「英文句子内容 → 中文同义句」逐条定位；**绝不能按编号直接搬**。
 - **拿到扫描页后怎么读上标（vision 路线）**：`pdftoppm -f <页> -l <页> -r 300 -png book.pdf p`（上标是小字号，≥200–300 dpi）→ `vision_analyze(image_url=<png>, question="这句话末尾引号后的上标数字是几？")`；整页定位后用 `region=[x1,y1,x2,y2]` **按原图像素裁剪（缩放前生效）** 放大只读那一处。机制：vision_analyze 是**转交**型工具——图片编码为 base64 data URL，交给 Hermes 辅助模型路由（`agent/auxiliary_client.py`）中的**多模态模型**，回给主模型的是文字，所以主模型是纯文本也能用。auto 解析顺序：主 provider（若本身是受支持的视觉后端）→ OpenRouter → Nous Portal → 原生 Anthropic → 自定义 endpoint（Qwen-VL/LLaVA/Pixtral）→ None；配置在 config.yaml `auxiliary.vision.{provider,model,base_url,api_key}`（另有 timeout 120s / download_timeout 30s / max_concurrency）。**上标读不准时不要换主模型**，单独给 vision 换更强的 VL 模型：`hermes config set auxiliary.vision.provider openrouter` + `hermes config set auxiliary.vision.model <id>`。SVG/BMP/TIFF 会先被栅格化。**读不清就报「读不清」，不许猜数字**（与上一条「宁缺勿错」同一原则）。
+  - 双归属 → **M3**（读回上标之后仍要按 M3 配对与建链）
 
 ## 来自「陷阱」
 

@@ -8,8 +8,10 @@
 |---|---|---|---|
 | `SKILL.md` | 入口：8 个形态开关、唯一主线、机制篇索引、症状检索表、交付清单、案例索引 | ~7 K 字符 | 每次必读 |
 | `references/mechanisms/*.md` | 按**机制**组织的判据与踩坑（跨页合并、注释体系、图题、表格公式、引文、结构噪声、EPUB 组装、校验、外部参照、输入协作） | 10 篇 / ~82 K 字符 | 按开关命中读 1–3 篇 |
+| └ 每篇头部 `## 相关篇` | 该机制与哪些邻篇相交、为什么（35 条指针） | — | 顺带看一眼 |
+| └ 条目下 `双归属 → **Mx**` | 跨两个机制的实测结论，正文只在主归属篇写一份（22 条标记） | — | 顺藤摸瓜 |
 | `references/*-case.md` | 按**书**组织：源文件构成、已知缺陷、用户当场指出的问题、最终口径 | 17 篇 | 只读同形态那一篇的差异清单 |
-| `scripts/` | 可单独运行的诊断 / 修复 / 校验脚本 | 25 个 | 直接跑，不重写 |
+| `scripts/` | 可单独运行的诊断 / 修复 / 校验脚本 + 互链表 `mechanism_links.json` | 27 个 | 直接跑，不重写 |
 
 ## 为什么改成按机制（重构前的问题）
 
@@ -35,15 +37,56 @@
 3. **主线写死一次**：`探型 → extract → build → pandoc → 校验 → 交付`。所有变体都是这条线上的开关组合。
 4. **分桶用「节默认 + 关键词覆盖」，然后人工复核两轮**。实测：关键词分桶只能处理 263/402 条，其余需人工判；自动结果里约 25 条跨篇错位（「注释篇里混标题层级」「校验篇里混 pandoc」），两轮修正共移动 49 条。**不要指望一次分对。**
 5. **逐字搬运，不改措辞**。保留实测数字与原节出处，每篇按来源节分组（`## 来自「…」`），便于回溯。
-6. **机械核对收尾**：`scripts/verify_skill_migration.py <旧SKILL.md> <技能目录>`，抽出旧版全部行首加粗结论逐条比对，**0 丢失**才算完成。上一次基线：298 条结论、355 条条目。
+6. **机械核对收尾**：`scripts/verify_skill_migration.py <旧SKILL.md> <技能目录>`，抽出旧版全部行首加粗结论逐条比对，**0 丢失**才算完成。上一次基线：298 条结论、392 条条目（含 35 条互链指针 + 21 条双归属标记）。
 
 ## 维护规则
 
 - **新学到的东西先判归属**：换本书还会踩 → 追加到对应机制篇末尾；只在某本书成立 → 进该书 case。**不要往 SKILL.md 加机制细节**，那是它膨胀到 85 K 的原因。
-- **一条结论可能双归属**（例：「合并后圈码标记挂到错误页底注」＝跨页合并的连带故障 + 注释配对问题）。放主归属那篇，在另一篇对应位置加一行「见 Mx」指针，**不要两处各写一份**。
+- **一条结论可能双归属**（例：「合并后圈码标记挂到错误页底注」＝跨页合并的连带故障 + 注释配对问题）。放主归属那篇，在另一篇对应位置加一行「双归属 → **Mx**」指针，**不要两处各写一份**。
+  - 已实现（22 条双归属标记 + 35 条相关篇指针）：每篇头部有 `## 相关篇` 列出该读哪些邻篇、为什么；具体条目下方有 `- 双归属 → **Mx**（原因）`。
+  - **这些互链写在生成脚本里，不在 md 里**——`references/mechanisms/*.md` 是生成产物，手改会被下次重新生成覆盖。要改互链，改 `REL` / `DUAL` 两张表（见 SKILL.md 维护说明），再重跑生成。
 - **改开关表要检查「必读篇」是否仍被覆盖**：M2（跨页合并）/ M8（组装）/ M9（校验）是主线必经，必须无条件读；它们不由任何开关决定。首次重构时就漏了这一条——按开关推演会以为「没有插图就不用读 M4」成立，但没人保证必读篇会被读到。
 - **新增机制篇**时同步改三处：`SKILL.md` 的机制篇索引表、症状表里至少一行指向它、本文件的表格。
 - **大改结构前先给骨架提案**（分层方案 + 体积预估 + 防漏办法），用户确认后再动手。用户明确要求过「先做一份新骨架给你看」——不要直接开搬。
+
+## 脚本可移植性审计（哈维案例实测，必做）
+
+技能自带的 25 个脚本**默认不可移植**。不要读代码判断可不可用——拿一本新书的数据全部跑一遍，看崩在哪、报什么。实测分三层：
+
+| 层 | 数量 | 判据 | 换书要做什么 |
+|---|---|---|---|
+| **成品级** | 10 | 吃 `book.md` / `.epub`，与中间层 schema 无关 | 直接跑 |
+| **常量绑** | 6 | 算法通用，但内含书名 / 章节名 / 小节名常量 | 改常量 |
+| **路径绑** | 2 | 写死 `/root/hegel_yizhu/pages.json` | 传 argv（已改成接参数，缺省回退旧路径） |
+
+- 成品级：`validate_epub` `check_grid_tables` `check_tables_pandoc` `check_figure_pairing` `check_quote_paragraphs` `check_end_matter_and_loss` `fix_epub_links` `wrap_math` `blind_read_quotes` `dump_insert_context`
+- 常量绑：`align_marks_notes`（章节名表）`diag_two_note_systems` `reflow_inserts`（术语表排除规则）`html_table_to_grid` `check_caps` `rebuild_panels`
+
+**根因是中间层 schema 三套并存**（`body`/`blocks`、`type`/`t`、`text`/`s`）。契约表见 SKILL.md「pages.json 契约」。新项目 extract 时同时写两套别名，能省掉一轮「崩→改→再崩」。
+
+**「跑通了」不等于「结论对」。** 假警报比崩溃更危险——它会让 agent 去改一张本来正确的表。审计时两个真 bug 都是这样暴露的：
+
+| 脚本 | 症状 | 根因 |
+|---|---|---|
+| `check_grid_tables.py` | 一张 pandoc 渲染正常的表被报 17 处「行宽不对齐」 | 用**字符偏移**比对竖线，而 grid table 按**显示列宽**填充（中文占 2 列）→ 改 `dw(行前缀)` |
+| `check_caption_completeness.py` | `KeyError: 'type'` 直接崩 | 只认 `type` 不认 `t`；块类型名只认 `fig` 不认 `image`/`chart`；题注字段只认 `cap`/`fnote` |
+
+**交叉验证是抓假警报的最快手段**：`check_grid_tables` 报问题而 `check_tables_pandoc` 报 0，且表里有中文 → 先怀疑前者，别去改表。
+
+## 改完必须回归
+
+拿一本**已交付过**的书（有 `book.md` + `final.epub` + `pages.json`）跑全部脚本，对比改动**前后输出的差异**。只看 exit code 不够：
+
+- 本次 `check_grid_tables` 修前修后 exit 都是 0，差别在「问题 17 处」vs「问题 0 处」
+- 管道会吞掉 exit code（`cmd | tail` 报的是 tail 的退出码）——要判成败就别接管道，或读 `${PIPESTATUS[0]}`
+- 修完假警报还要**反向验证没把真问题一起关掉**：故意造一个坏样本（如列宽不足的中文表），确认脚本仍然抓得到
+
+## 发布到 GitHub
+
+- 仓库 `MaplumeX/hermes-epub-skills`，本地克隆在 `/root/skills_upload/hermes-epub-skills`
+- 流程：`cp -r ~/.hermes/skills/productivity/{layout-json-to-epub,web-to-epub} .` → 删 `__pycache__` / `*.pyc` → `git add -A` → commit → push
+- **gh 默认活动账号是 rualons，推这个仓库必须显式指定**：`GH_TOKEN=$(gh auth token --user MaplumeX) git push origin HEAD`
+- 推完核远端，别只信 push 的输出：`git ls-remote origin master` 对 SHA、`gh api repos/MaplumeX/hermes-epub-skills/contents/<path> --jq '.size'` 对文件大小、目录用 `--jq 'length'` 对数量
 
 ## 案例：哈维《资本的限度》的引文判定四轮演进
 

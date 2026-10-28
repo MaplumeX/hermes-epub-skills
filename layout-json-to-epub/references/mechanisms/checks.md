@@ -6,10 +6,15 @@
 
 > 本篇内容自 SKILL.md 拆出，条目逐字保留（含实测数字与原节出处）。
 
-## 脚本复用前的两个已知坑（哈维案例实测）
+## 相关篇
 
-- **`check_grid_tables.py` 曾对中文表格全报假警报**：它用**字符偏移**比对竖线位置，而 grid table 是按**显示列宽**填充的（中文占 2 列）。同一张表 `check_tables_pandoc.py` 判 0 问题、pandoc 渲染正常，旧版却报 17 处「行宽不对齐」。已修：改用 `dw(行前缀)` 算显示列宽。**症状认法**：`check_grid_tables` 报问题但 `check_tables_pandoc` 报 0，且表里有中文——先怀疑这个，别去改表。
-- **`check_caption_completeness.py` 曾崩在 `KeyError: 'type'`**：它假设块有 `type` 字段，而新 extract 常用 `t`；也不认 `image`/`chart` 这两个块类型名、只认 `fig`。已修：`b.get('type') or b.get('t')`，块类型名放宽到 `fig/image/chart`，题注字段放宽到 `cap/fnote/image_caption/image_footnote/chart_caption/chart_footnote`。**但它仍要求 pages.json 保留题注子字段**——extract 若把题注拍平进正文 `s`，脚本只能报 0，此时应改用 `check_figure_pairing.py`（吃 book.md）。
+> 一条结论常跨两个机制：**正文只在主归属那篇写一份**，这里只放指针。
+
+- **M2** —— 合并后必须重跑全部校验（节级 + 附录每页 + 章节级），只跑 align 会漏附录错位
+- **M3** —— 注释对齐是第 2 道校验的主体：集合相等 ≠ 编号正确，还要查严格递增与 id 唯一
+- **M4** —— 图号连续性是最快的「图被误杀」探针；题注完整性要 cap + fnote 两边都算
+- **M5** —— 表格必须单独喂 pandoc 硬校验；带表格的书保真度比值要换算
+- **M8** —— 第 3 道校验就是 epubcheck + validate_epub，报错口径见 M8
 
 ## 三道校验口径（每次 build 后按序跑）
 
@@ -21,6 +26,10 @@
 3. **成品校验** —— `scripts/validate_epub.py`（XML、内部链接、文件内锚点、重复 id、noteref↔backlink、MathML/表格计数、封面、nav）+ `epubcheck`
 4. **抽读 xhtml** —— 解包抽 2–3 处表格 / 公式 / 引用块，肉眼确认渲染正确（第 3 步全绿也可能错）
 
+## 脚本复用前的两个已知坑（哈维案例实测）
+
+- **`check_grid_tables.py` 曾对中文表格全报假警报**：它用**字符偏移**比对竖线位置，而 grid table 是按**显示列宽**填充的（中文占 2 列）。同一张表 `check_tables_pandoc.py` 判 0 问题、pandoc 渲染正常，旧版却报 17 处「行宽不对齐」。已修：改用 `dw(行前缀)` 算显示列宽。**症状认法**：`check_grid_tables` 报问题但 `check_tables_pandoc` 报 0，且表里有中文——先怀疑这个，别去改表。
+- **`check_caption_completeness.py` 曾崩在 `KeyError: 'type'`**：它假设块有 `type` 字段，而新 extract 常用 `t`；也不认 `image`/`chart` 这两个块类型名、只认 `fig`。已修：`b.get('type') or b.get('t')`，块类型名放宽到 `fig/image/chart`，题注字段放宽到 `cap/fnote/image_caption/image_footnote/chart_caption/chart_footnote`。**但它仍要求 pages.json 保留题注子字段**——extract 若把题注拍平进正文 `s`，脚本只能报 0，此时应改用 `check_figure_pairing.py`（吃 book.md）。
 
 ## 来自「教科书（MathML 公式 + HTML 表格 + 页面圈码脚注 + 缺失插图）」
 
@@ -64,3 +73,4 @@
 ## 来自「中译本学术专著·双注释体系（页脚圈码 + 章末「译注」数字） / 收尾两个「校验全绿…」
 
 - **`validate_epub.py` + epubcheck 全绿 ≠ 渲染正确**：本书表8.1 的 `rowspan` 被 `html_table_to_grid` 展开后首列重复（「物质形式」出现两次），两项校验都不报错；只有 `unzip -p out.epub EPUB/text/chNNN.xhtml` 读实际 `<table>` 才发现。**收尾必抽 2–3 处表格 / 公式 / 引用块解包读 xhtml**，别只看校验输出。
+  - 双归属 → **M5**（示例是表格 rowspan，表格细节在 M5）
