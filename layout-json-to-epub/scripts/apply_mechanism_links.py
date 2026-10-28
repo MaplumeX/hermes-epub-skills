@@ -30,6 +30,22 @@ REL_SECTION = re.compile(r'^## 相关篇\n(?:.*\n)*?(?=^## |\Z)', re.M)
 DUAL_LINE = re.compile(r'^\s+- 双归属 → .*\n', re.M)
 
 
+# mech 键 → 文件名（与 SKILL.md 机制篇索引一致）
+FNAME = {
+    'M1-inputs': 'inputs.md',
+    'M2-page-break': 'page-break-merge.md',
+    'M3-notes': 'notes.md',
+    'M4-figures': 'figures.md',
+    'M5-tables-math': 'tables-math.md',
+    'M6-quotes': 'quotes.md',
+    'M7-structure': 'structure-noise.md',
+    'M8-assembly': 'assembly.md',
+    'M9-checks': 'checks.md',
+    'M10-external': 'external-ref.md',
+}
+
+
+
 def rel_block(items):
     if not items:
         return ''
@@ -104,20 +120,6 @@ def main(skill_dir=None):
 
     print('相关篇指针 %d 条，双归属标记 %d 条' % (total_rel, total_dual))
 
-
-# mech 键 → 文件名（与 SKILL.md 机制篇索引一致）
-FNAME = {
-    'M1-inputs': 'inputs.md',
-    'M2-page-break': 'page-break-merge.md',
-    'M3-notes': 'notes.md',
-    'M4-figures': 'figures.md',
-    'M5-tables-math': 'tables-math.md',
-    'M6-quotes': 'quotes.md',
-    'M7-structure': 'structure-noise.md',
-    'M8-assembly': 'assembly.md',
-    'M9-checks': 'checks.md',
-    'M10-external': 'external-ref.md',
-}
 
 if __name__ == '__main__':
     main(sys.argv[1] if len(sys.argv) > 1 else None)
