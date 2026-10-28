@@ -6,6 +6,11 @@
 
 > 本篇内容自 SKILL.md 拆出，条目逐字保留（含实测数字与原节出处）。
 
+## 脚本复用前的两个已知坑（哈维案例实测）
+
+- **`check_grid_tables.py` 曾对中文表格全报假警报**：它用**字符偏移**比对竖线位置，而 grid table 是按**显示列宽**填充的（中文占 2 列）。同一张表 `check_tables_pandoc.py` 判 0 问题、pandoc 渲染正常，旧版却报 17 处「行宽不对齐」。已修：改用 `dw(行前缀)` 算显示列宽。**症状认法**：`check_grid_tables` 报问题但 `check_tables_pandoc` 报 0，且表里有中文——先怀疑这个，别去改表。
+- **`check_caption_completeness.py` 曾崩在 `KeyError: 'type'`**：它假设块有 `type` 字段，而新 extract 常用 `t`；也不认 `image`/`chart` 这两个块类型名、只认 `fig`。已修：`b.get('type') or b.get('t')`，块类型名放宽到 `fig/image/chart`，题注字段放宽到 `cap/fnote/image_caption/image_footnote/chart_caption/chart_footnote`。**但它仍要求 pages.json 保留题注子字段**——extract 若把题注拍平进正文 `s`，脚本只能报 0，此时应改用 `check_figure_pairing.py`（吃 book.md）。
+
 ## 三道校验口径（每次 build 后按序跑）
 
 1. **保真度比值** —— `源 layout 所有 span 的非空白字符数` vs `book.md 去标记后的非空白字符数`，比值应 ≈1。

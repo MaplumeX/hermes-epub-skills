@@ -11,9 +11,12 @@ For 逐节讲解+圈码注释 books (张世英《黑格尔〈小逻辑〉绎注�
 Usage: python3 batch_report.py
 Adjust MISMATCH list from align.py output (sections where marks != notes).
 """
-import json, re
+import json, re, sys
 
-with open('/root/hegel_yizhu/pages.json') as fh:
+# 路径由命令行给出：python3 batch_report_marks.py <pages.json> [MISMATCH 章节号,逗号分隔]
+# 缺省沿用黑格尔案例路径（向后兼容）。
+SRC = sys.argv[1] if len(sys.argv) > 1 else '/root/hegel_yizhu/pages.json'
+with open(SRC) as fh:
     pages = json.load(fh)
 
 CIRC = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝㉞㉟㊱㊲㊳㊴㊵'

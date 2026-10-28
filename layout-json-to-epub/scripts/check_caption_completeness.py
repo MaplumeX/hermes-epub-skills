@@ -36,22 +36,29 @@ def check(pages, kinds=('图', '表')):
 
     for p in pages:
         for b in p['blocks']:
-            bt = b['type']
-            if bt == 'fig':
+            # pages.json 的块类型字段各项目不一：旧版用 'type'，新版 extract 常用 't'。
+            # 缺字段时按空串处理，避免整脚本 KeyError 崩掉（哈维案例实测踩到）。
+            bt = b.get('type') or b.get('t') or ''
+            # 块类型名各项目不一：'fig'/'image'/'chart' 都是图，'table' 是表
+            if bt in ('fig', 'image', 'chart'):
                 kind = '图'
             elif bt == 'table':
                 kind = '表'
             else:
                 kind = None
             if kind and kind in kinds:
-                for src in ('cap', 'fnote'):
-                    for c in b.get(src, []):
+                for src in ('cap', 'fnote', 'image_caption', 'image_footnote',
+                            'chart_caption', 'chart_footnote'):
+                    caps = b.get(src) or []
+                    if isinstance(caps, str):
+                        caps = [caps]
+                    for c in caps:
                         m = CAP.match(cl(c))
                         if m and m.group(1) == kind:
                             k = (kind, int(m.group(2)), m.group(3))
                             have[k].add(int(m.group(4)))
             if kind is None or kind in kinds:
-                for m in ANY.finditer(cl(b.get('text', ''))):
+                for m in ANY.finditer(cl(b.get('text') or b.get('s') or '')):
                     k = (m.group(1), int(m.group(2)), m.group(3))
                     if k[0] in kinds:
                         refs[k].add(int(m.group(4)))

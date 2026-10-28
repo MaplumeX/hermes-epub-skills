@@ -17,9 +17,11 @@ Why pages.json level, not book.md post-process:
   previous line, the merged line may STILL end with non-terminal punctuation
   and its continuation gets skipped (e.g. "…纯粹的反思和规定的" + "反思的统一").
 """
-import json, re, shutil
+import json, re, shutil, sys
 
-SRC = '/root/hegel_yizhu/pages.json'   # adjust per project
+# 路径由命令行给出：python3 merge_page_breaks.py <pages.json> [pages_raw.json]
+# 缺省时沿用黑格尔案例路径（向后兼容），换项目必须显式传参。
+SRC = '/root/hegel_yizhu/pages.json'
 BAK = '/root/hegel_yizhu/pages_raw.json'
 
 HEADER_FOOTER_RE = re.compile(
@@ -75,7 +77,11 @@ def is_pure_continuation(t):
         return False
     return True
 
-def main():
+def main(src=None, bak=None):
+    global SRC, BAK
+    if src:
+        SRC = src
+        BAK = bak or src.replace('.json', '_raw.json')
     shutil.copy(SRC, BAK)
     with open(SRC) as fh:
         pages = json.load(fh)
@@ -147,4 +153,5 @@ def main():
     print(f"wrote {SRC} (backup {BAK})")
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1] if len(sys.argv) > 1 else None,
+         sys.argv[2] if len(sys.argv) > 2 else None)

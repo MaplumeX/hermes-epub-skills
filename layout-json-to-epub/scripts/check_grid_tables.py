@@ -33,12 +33,12 @@ def main(path):
             i += 1
             continue
         start = i
-        cols = [m.start() for m in re.finditer(r'\+', lines[i])]
+        cols = [dw(lines[i][:m.start()]) for m in re.finditer(r'\+', lines[i])]
         i += 1
         while i < len(lines) and (ROW.match(lines[i].strip()) or SEP.match(lines[i].strip())):
             ln = lines[i].rstrip()
             if ROW.match(ln.strip()):
-                bars = [m.start() for m in re.finditer(r'\|', ln)]
+                bars = [dw(ln[:m.start()]) for m in re.finditer(r'\|', ln)]
                 if bars != cols:
                     bad += 1
                     print('行宽不对齐 @line %d' % (i + 1))
