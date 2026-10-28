@@ -19,6 +19,7 @@
 | 尾注（附注）制 + 跨册合订 | 注释在另一册、英文原版版本不匹配时编号不可搬运 | `references/ordeal-by-fire-case.md` |
 | 教科书（MathML + HTML 表 + 图组） | 数百行间公式、图题/表题被 OCR 拆散或丢进 discarded | `references/mankiw-*.md`、`micro-theory-11e-case.md`、`samuelson-economics-19e-case.md`、`varian-microeconomics-case.md` |
 | 学术专著（全书 MathML） | 双栏、索引跨页、网格表格 | `references/marx-math-econ-case.md`、`sweezy-capitalist-development-case.md` |
+| 中译本学术专著·双注释体系 | 页脚圈码注（每页从 ① 重编）+ 章末「译注」数字注、`ref_text` 独立块类型 | `references/harvey-limits-to-capital-case.md` |
 
 关键内容（都写在 `SKILL.md` 里）：
 
@@ -28,6 +29,7 @@
 - **多面板图重建**：按 bbox 归组、面板标签不臆造、行聚类排序
 - **跨页断行合并**：必须在 `pages.json` 层做，不能事后改 `book.md`
 - **插图/表格插入位置**：不切断正文、上下加分隔线、续文接回（`scripts/reflow_inserts.py`）
+- **引文段落转引用格式**：区分「整段转引他人原文」与「作者自己的分析段（即使段末带出处）」，含跨段引文的识别与分块（`scripts/blind_read_quotes.py`、`check_quote_paragraphs.py`）
 - **保真度自检**：字符数比值 + 块级清单 + 图片引用集合差
 
 ### `web-to-epub/`
@@ -35,7 +37,7 @@
 
 ## 脚本
 
-`scripts/` 下 22 个脚本都能单独跑，大多接受「输入文件 + 退出码即结论」的形态：
+`scripts/` 下 29 个脚本都能单独跑，大多接受「输入文件 + 退出码即结论」的形态：
 
 ```bash
 # 校验成品
@@ -44,9 +46,14 @@ java -jar epubcheck.jar out.epub
 
 # 诊断：标记对齐 / 图题完整性 / 表格合法性 / 块丢失
 python3 layout-json-to-epub/scripts/align_marks_notes.py ...
+python3 layout-json-to-epub/scripts/diag_two_note_systems.py pages.json
 python3 layout-json-to-epub/scripts/check_caption_completeness.py pages.json fig
 python3 layout-json-to-epub/scripts/check_tables_pandoc.py book.md
 python3 layout-json-to-epub/scripts/check_loss_blocks.py book.md A=docA_layout.json
+
+# 引文判读（拆成盲读版 → 逐章人工/并行 subagent 判读 → 段号回映射成段首清单）
+python3 layout-json-to-epub/scripts/blind_read_quotes.py split book.md read/
+python3 layout-json-to-epub/scripts/blind_read_quotes.py merge answers.json read/ quotes.py
 
 # 排版后处理
 python3 layout-json-to-epub/scripts/merge_page_breaks.py ...
