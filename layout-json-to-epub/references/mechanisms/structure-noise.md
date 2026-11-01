@@ -36,6 +36,7 @@
 
 - **章节层级（中译本三档）**：`第X章` → `#`；`第X节` → `##`；`一/二/三 + 空格 + 短标题` → `###`（**排除字符集里不要放全角冒号**，`四 均衡增长路径：数量体系` 含 `：` 会漏判）；附录 `B.N` → `##`（挂在 `# 附录B` 下）。**正文行首「第一章主要明确…」不是标题**——靠 `len<40` + 无 `。！？，、；` 挡住
 - **页眉噪声两种形态**：① title 块重复书名（去空白后 == 书名，本案例 p11/p29/p57/p119 四处）→ 丢；② header 里 `......`、`• • • •` 装饰行 → 忽略。`[Unreadable]` 也要滤
+- **OCR 流水线自述文字会当成正文块混入**（本书 B 册 p70，恰好占满一个空白/装饰线页）：`The Ground Truth image displays a single, solid horizontal line…` / `According to Rule 2 (UNDERSCORE & LINE RULES)…` / `The provided OCR content is “____”…` / `OCR result must ignore it`。这是标注平台自动生成的「ground truth 比对说明」，**不是原书内容**，必须过滤。扫法：找「无中文且 len>80 的 text 块」逐个看（本书全书只有版权页与这一处），命中 `Ground Truth image displays|According to Rule|OCR result must ignore|UNDERSCORE & LINE RULES` 即丢。同族还有 `quick brown fox`、`The OCR result should be empty`。
 - **`Ground Truth` 噪声出现在 preproc text（不只是 discarded）**：`The Ground Truth image displays a single, solid horizontal line…` 整段 650 字，混进正文会毁掉索引区。过滤判据：含 `Ground Truth image displays` 或 `quick brown fox`
 
 ## 来自「中译本学术专著（页脚圈码脚注 + MathML 公式 + HTML 表格 + 少量插…」
@@ -51,6 +52,13 @@
 - **`discarded header` 里恰好等于标准小节名的块必须救回为 title**：OCR 常把章末小节标题判成页眉（`header` 块内容就是 `推荐阅读材料`、`小结`），按「header 一律丢」会静默丢掉整节标题——本案例 4 处（第2/4/16/19章的「小结」「推荐阅读材料」）直到数导航条目才发现。判据：`re.sub(r'\s','',text) in {'小结','本章小结','练习题','分析问题','推荐阅读材料','定义'}` → 按 y 插回 blocks 当 title。**成品验收信号**：`grep -c '^### 小结'` 应等于章数（本案例 19 章 → 19 个）
 - **`discarded footer` 里的成句中文是正文引导句**：`含汉字 + len>15 + 以 。！？ 结尾` → 救回 blocks（本案例 B p135 页末「我们现在使用数学方法对这些概念做更精密准确的分析。」被整句丢在 footer）
 - **空页说明文字也是噪声**：`The OCR result should be empty, as the image contains only…`（与 `Ground Truth image displays`、`quick brown fox` 同类）会整段混进正文，加进 NOISE_RE
+
+## 来自「军事史四册合订（章标题块形态不统一）」
+
+- **章标题有三种块形态，别按 `title.level` 切章**：① 章名是 `level 1`（多数章）；② 「第N章」是 `level 1`、章名另起 `level 2`（第十四章）；③ 章名直接是 `level 2`（第八章）。只认 `level==1 && 非「第N章」` 会漏掉 ②③ 两章 → 这两章的正文被算进前一章，**上千个边注标记拿到 `ch=None`，注释落点全丢，且每章缺口列表整页全满**（假缺口，容易误判成源数据缺失）。
+- **以书前目录为唯一权威**：先用 `第N章 名称……页码` 行解析出 `(章号, 章名)` 有序清单，正文只做「归一化名字 == 目录名」匹配来切章，完全不依赖 block type / level。归一化必须同时处理空格、`：→:`、`，→,`、`——→-`、去引号——带引号+全角冒号的章名（`“巴格拉季翁”战役：…`）不归一则永远匹配不上。
+- **篇分隔页可能只在目录里有**：本书「战争第二阶段」正文根本没有分隔页（分隔页位置是一张整页图），只在目录出现 → 按「第 9 章之前」补插 `# 篇名`，不要等正文块出现。
+- **目录条目名字里的多余空格不要带进成品**：输出标题时 `re.sub(r'\s+','',name)`，否则导航目录出现「第4章 德国的猛攻」上下不一致的半角空格。
 
 ## 来自「中译本教科书·单册拆多文件（`title` 自带 level + 图题被拆散 + 书…」
 

@@ -86,3 +86,18 @@
 - 元数据补充：dc:creator 拆作者/译者（contributor role=trl）、dc:publisher（查豆瓣确认出版社，勿凭印象——本会话误写商务印书馆，实为人民出版社）、dc:subject、dc:description、dc:rights、dc:source
 - **脚本非幂等**：对已注入的 EPUB 重跑会 assert 失败——从 pandoc 原始输出重新生成再注入
 - 验证：spine 首位是 cover、nav 含封面、`properties="cover-image"` 存在、zipfile.testzip() OK
+
+## 来自「军事史大图版（体积 / 管道 / 一次性装配链）」
+
+- **别把 pandoc 的输出管道接到 `head`/`tail`**：管道提前关闭会让 pandoc 收 SIGPIPE 中途死掉——`exit 2`、**epub 根本没生成**，而报错信息只有 `Could not load translations` 这类良性噪声，极易误判成参数错（本会话为此白查一轮）。要限流就先 `> /tmp/pandoc.log 2>&1` 再读日志。
+- **体积控制要按「被引用的图」算，不是按图片包大小算**：本书 images 包 45 MB / 113 张，md 实际只引用 59 张（31.8 MB）。两档重采样即可从 31.8 MB 压到 16.4 MB：横幅图（地图）1500px/q82、竖幅图（照片）1050px/q74，成品 18.0 MB（Telegram 上限 20 MB 可发）。
+- **系统没有 PIL/ImageMagick 时的可用路径**：`python3 -m venv .venv && .venv/bin/pip install pillow`，脚本读 `book.md` 里的 `images/xxx.jpg` 列表逐张重采样到 `images_opt/`，再 `ln -sfn images_opt images`——**markdown 不用改一个字**，`images` 软链指向优化目录即可复用同一条 pandoc 命令。
+- **装配链固定为五步**（每步都能单独重跑）：`build.py → fix_marks.py --apply → pandoc（--toc --toc-depth=3 --epub-chapter-level=2 --epub-cover-image）→ meta.py（注入描述/译者/来源）→ fix_epub_links.py → validate_epub.py + epubcheck`。`meta.py` 必须对 pandoc 原始输出跑（非幂等），交付文件名带 `-vN-MMDDHHMM` 并报 md5 + 字节数。
+- **`<p class="cap">…</p>` 这类自写 HTML 段落会被当作 markdown 内联解析**（本书一次踩出 3 个 `mismatched tag`）：`<p class="tf">1. 只统计82毫米…</p>` 里的 `1. ` 被 pandoc 转成 `<ol><li>`，产物出现 `<p><ol>…</p></li></ol>`。改用 **fenced div**：`::: cap` / `**表1.1：…**` / `:::` → `<div class="cap"><p><strong>…</strong></p></div>`；CSS 选择器相应写 `div.cap p {…}`。div 内的内容仍是 markdown，所以行首 `1. ` 要么转义成 `1\. `，要么把序号包进 `<span class="enn">1.</span>`（后者更省事，且天然避免列表解析）。
+- **章末注释区若用 `[^cN-M]`（pandoc 原生脚注）会被统一挪到文件末**，`<h4>注释</h4>` 会剩下一个空标题。要「注释就印在注释标题下」，必须手写锚点：正文 `<a id="enref-cN-M" href="#en-cN-M"><sup>M</sup></a>`、条目 `<div class="en"><p><a id="en-cN-M"></a><span class="enn">M.</span> 文本 <a href="#enref-cN-M">↩︎</a></p></div>`；跨文件的译者注附录由 `fix_epub_links.py` 收尾（本书 28 处）。
+
+## 来自「军事史两册合订（章末尾注 + 页脚译注 + 地图）」（排版块写法）
+
+- **不要用 `<p class="x">…</p>` 在 markdown 里写带样式的段落块**（症状最隐蔽）：块首是 raw inline HTML，pandoc 只把 `<p class="tf">` 当行内标签、后面照 markdown 解析——注文以 `1. ` 开头时立刻被转成 `<ol>` 嵌进 `<p>`，产物是 `<p class="tf"><ol><li>…</p></li></ol>`；`validate_epub.py` 报 3 个文件 `mismatched tag`，而 **pandoc exit 0、日志里只有 `Could not load translations` 那类良性噪声**。正确写法是 **fenced div**：`::: cap` / `**表1.1：…**` / `:::`，渲染成 `<div class="cap"><p>…</p></div>`；CSS 选择器跟着改成 `div.cap p {…}`（留着 `p.cap` 就不生效）。cap / tf / legend / en / tn / ref 六类要一次全换，换一半会剩下几处同样的 mismatched tag。
+- **div 里以数字开头的条目同样会被当有序列表**：用 `<span class="enn">1.</span> 文本` 起头（行首是 `<` 不是数字）比 `1\.` 更稳，也不会被后续的 `fix_text` 二次转义。
+- **`--epub-chapter-level=1` 配 `#` 章标题** 时，`#### 注释` 会落在本章文件内（不另起文件），注释区与本文件双向锚点天然有效；只有书末「译者注（原书页脚注）」是跨文件，交给 `fix_epub_links.py`（本书 28 处）。
