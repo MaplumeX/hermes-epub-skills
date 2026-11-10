@@ -9,7 +9,7 @@
 | 层 | 内容 | 规模 | 加载方式 |
 |---|---|---|---|
 | `SKILL.md` | 入口：8 个形态开关、唯一主线、机制篇索引、症状检索表、交付清单、案例索引 | ~7 K 字符 | 每次必读 |
-| `references/mechanisms/*.md` | 按**机制**组织的判据与踩坑（跨页合并、注释体系、图题、表格公式、引文、结构噪声、EPUB 组装、校验、外部参照、输入协作） | 10 篇 / ~82 K 字符 | 按开关命中读 1–3 篇 |
+| `references/mechanisms/*.md` | 按**机制**组织的判据与踩坑（跨页合并、注释体系、图题、表格公式、文件引文、结构噪声、EPUB 组装、校验、外部参照、输入协作、表题与表格断段） | 11 篇 / 12 节 / ~110 K 字符 | 按开关命中读 1–3 篇 |
 | └ 每篇头部 `## 相关篇` | 该机制与哪些邻篇相交、为什么（35 条指针） | — | 顺带看一眼 |
 | └ 条目下 `双归属 → **Mx**` | 跨两个机制的实测结论，正文只在主归属篇写一份（21 条标记） | — | 顺藤摸瓜 |
 | `references/*-case.md` | 按**书**组织：源文件构成、已知缺陷、用户当场指出的问题、最终口径 | 17 篇 | 只读同形态那一篇的差异清单 |
@@ -87,8 +87,9 @@
 
 - 仓库 `MaplumeX/hermes-epub-skills`，本地克隆在 `/root/skills_upload/hermes-epub-skills`
 - 流程：`cp -r ~/.hermes/skills/productivity/{layout-json-to-epub,web-to-epub} .` → 删 `__pycache__` / `*.pyc` → `git add -A` → commit → push
-- **gh 默认活动账号是 rualons，推这个仓库必须显式指定**：`GH_TOKEN=$(gh auth token --user MaplumeX) git push origin HEAD`
-- 推完核远端，别只信 push 的输出：`git ls-remote origin master` 对 SHA、`gh api repos/MaplumeX/hermes-epub-skills/contents/<path> --jq '.size'` 对文件大小、目录用 `--jq 'length'` 对数量
+- **gh 默认活动账号是 rualons，推这个仓库必须显式指定**：`GH_TOKEN=$(gh auth token --user MaplumeX) git push origin HEAD`（rualons 对该仓库只有 `pull`，本就推不动；`gh auth status` 里显示的 active 账号不代表这次 push 用了谁）
+- **commit 作者邮箱必须写 `MaplumeX@users.noreply.github.com`（大小写跟登录名一致）**：GitHub 按**邮箱**归属作者，小写 `maplume@users.noreply.github.com` 命中另一个真实账号 `Maplume`（id 141901647），推送成功但提交显示在那个账号下。历史提交用 `git log --pretty='%an <%ae>'` 对照，新提交邮箱与它们不一致就是冒烟点；写错了用 `git commit --amend --reset-author --no-edit` + `git push --force-with-lease` 修
+- 推完核远端，别只信 push 的输出：`git ls-remote origin master` 对 SHA、`gh api repos/MaplumeX/hermes-epub-skills/contents/<path> --jq '.size'` 对文件大小、目录用 `--jq 'length'` 对数量、`gh api repos/MaplumeX/hermes-epub-skills/commits/<sha> --jq .author.login` 对作者归属
 
 ## 案例：哈维《资本的限度》的引文判定四轮演进
 

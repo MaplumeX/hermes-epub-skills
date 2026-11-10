@@ -65,6 +65,7 @@ Formula-heavy pages converted from Word have dual copies: VML `<v:imagedata src=
 
 ### 6. Cover
 `templates/make_cover.py` — PIL, dark red `#8C1F28` + `#F5E9D0` text, wqy-zenhei font. `book.set_cover("cover.jpg", bytes)`.
+用户要**真实书影**时不要用它：走 `references/cover-from-scan.md` + `scripts/prepare_cover_scan.py`。
 
 ### 7. Verify — run `scripts/verify_epub.py <book.epub>`
 Checks: every `.xhtml/.opf/.ncx` XML-valid via lxml; every `<img src>` exists in package; no garbage residues (`\u0000`, `�`, `&lt;a id=`, `<v:`, `![if`, `msEquation`); metadata present; total body char count. Spot-check chapter first/last lines too.
@@ -82,8 +83,12 @@ Checks: every `.xhtml/.opf/.ncx` XML-valid via lxml; every `<img src>` exists in
 3. **处理封面**（PIL + numpy）：按行/列纸像素占比检测书页→裁扫描背景；再按“有墨迹行列”收紧取景；
    用**块状最大值估背景**（不用高斯模糊，否则笔画周围出白晕）做除法归一→去透印；硬阈值+“仅保留墨迹邻域”
    去掉淡印章与噪点；最后映射到暖白纸+深墨（不要纯白，屏幕上刺眼）。输出 ~1400px 宽 JPEG。
-4. **每步用 vision_analyze 验**（文字是否完整、印章/透印是否清除、有无误删小号字与横线）——
-   模型会直接指出“白晕/残印/留白过多”，比肉眼看更快。
+4. **版式/文字层面用 vision_analyze 验**（这是哪一页、文字是否完整可读、留白是否均衡、有无误删小号字与横线）——
+   但**“印章/淡痕是否真的清除了”不要问模型**：同一张图它会前后自相矛盾（先说“完全保留”、放大后说“几乎看不见”、
+   整页再看又说“明显”）。这类判断用像素统计：抹除区 `(reg<170).mean()` 应 ≈0、`reg.min()` 应接近纸色（>230）。
+5. **抹章坐标用比例、在缩放之后换算成像素**。在缩放前的数组上直接用成品像素坐标，会静默抹错位置：
+   不报错、章还在，别处少一块。整条处理链已固化成 `scripts/prepare_cover_scan.py`（含抹章与自检），
+   完整流程与先例见 `references/cover-from-scan.md`。
 5. 封面的出处要写进书名页（`封面：1845 年初版扉页（archive.org 公有领域扫描件）`）——便于用户核对。
 
 ## Pitfalls
@@ -130,8 +135,11 @@ Checks: every `.xhtml/.opf/.ncx` XML-valid via lxml; every `<img src>` exists in
 ## Files
 
 - `templates/make_epub.py` — full pipeline template (edit CONFIG, run).
-- `templates/make_cover.py` — PIL cover generator.
+- `templates/make_cover.py` — PIL cover generator（程序画的封面，兜底用）。
+- `scripts/prepare_cover_scan.py` — 公有领域扫描页（初版扉页/封面）→ 封面：裁扫描背景、去透印、抹馆藏章（比例坐标 + 羽化）、像素自检。
+- `references/cover-from-scan.md` — 找真实书影：archive.org 检索与多馆藏比对、用墨迹占比筛页型、抹章与验证、交付时须声明的改动。
 - `scripts/verify_epub.py` — epub validation (XML, images, garbage, metadata).
+- `scripts/verify_text_fidelity.py` — 源网页 vs 成品 EPUB：25 字窗口双向比对 + 脚注双向 + 内部链接解析（`--pages pages --map 011=chap_011.xhtml …`）。“一字不漏”只认它的输出。
 - `references/marxists-org.md` — marxists.org 中文文库 site specifics + already-converted books.
 - `references/pandoc-markdown-epub.md` — pandoc Markdown→EPUB build + footnote-integrity verification (nested notes silently dropped!).
 - `references/layout-json-extraction.md` — PDF OCR layout JSON → clean Markdown (footnote pairing, cross-page merging, heading inference, missing-content marking, §-scoped 正文/[说明]/[附释N] type-block state machine, missing-§-heading repair, foreign-term proofreading vs original-language source).

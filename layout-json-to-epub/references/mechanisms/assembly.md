@@ -6,7 +6,19 @@
 
 > 本篇内容自 SKILL.md 拆出，条目逐字保留（含实测数字与原节出处）。
 
+## 来自「HTML 直出（巴巴罗萨脱轨）——pandoc 写 epub 的两个硬坑」
+
+- **正文块全用裸 HTML 时，不要让 pandoc 走 markdown 解析**：`<p>3. 概念：…</p>` 会被 `markdown_in_html_blocks` 当成段落内容二次解析（`3. ` 变 `<ol start="3">`、`<p>` 套 `<p>`，epubcheck 报 12 fatal `li must be terminated`）。加 `-markdown_in_html_blocks` 只修好裸 `<p>`，`<div>` 包 `<p class="cap">` 的图注块仍会被拆坏。**正解：把所有块（含 `<h1>`/`<h2>`）直接写成 HTML，pandoc 用 `-f html` 输入**，`--toc`/`--epub-chapter-level` 照常工作。
+- **pandoc 的 HTML reader 会丢掉 `<p>` 上的全部属性**（`class` 和 `id` 一起丢）：`<p class="en" id="en-c1-5">` 输出成 `<p>`，于是注释条目没有 id（epubcheck 报 665 条 `Fragment identifier is not defined`）、CSS 类全失效。**带样式/锚点的段落一律用 `<div class="…" id="…">`**，`<a id>` 会被改写成 `<span id>` 但 id 保住；CSS 相应写 `div.en` 而不是 `p.en`。
+- pandoc 2.17 没有 `--split-level` / `--epub-title-page`（分别叫 `--epub-chapter-level`、默认就带 title page）；`--epub-cover-image` 可用，封面用 `ffmpeg -f lavfi -i color=…` + 逐行 `drawtext`（`text='中文'` 直接写，居中用 `x=(w-tw)/2`，一次 drawtext 多行会整体左对齐）。
+
+
+
 ## 相关篇
+
+- M14 `tables.md`：表题加粗（tcap vs tnote 短标签）、表格不得劈开段落（拼接+整块后移+字符量守恒自检）。
+
+- M13 `quotes.md`：文件引文（命令/训令/电报/作战摘要/日记）转 `<blockquote>` 的整节人工判定与精确定位（含切段、id 守恒自检）。
 
 > 一条结论常跨两个机制：**正文只在主归属那篇写一份**，这里只放指针。
 
@@ -86,6 +98,10 @@
 - 元数据补充：dc:creator 拆作者/译者（contributor role=trl）、dc:publisher（查豆瓣确认出版社，勿凭印象——本会话误写商务印书馆，实为人民出版社）、dc:subject、dc:description、dc:rights、dc:source
 - **脚本非幂等**：对已注入的 EPUB 重跑会 assert 失败——从 pandoc 原始输出重新生成再注入
 - 验证：spine 首位是 cover、nav 含封面、`properties="cover-image"` 存在、zipfile.testzip() OK
+- **`subject_suggest` 搜不到时的二级路径**（军事史/小众书实测）：先 `web_search "<书名> 豆瓣"` 找到条目 id，再 `curl -A "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 …)" https://m.douban.com/book/subject/<id>/`，从页面里 `grep -o 'https://img[^"]*\.jpg'` 拿到 `…/view/subject/m/public/sXXXX.jpg`，把路径中的 **`/m/` 换成 `/l/`** 即 1000×1362 大图（换 `/s/` 只有 200px）。下载仍需 `Referer: https://book.douban.com/`。
+- **源扫描可能根本没有封面页**：layout.json 第一页就是书名页（`preproc_blocks` 全是 text，没有 image 块）时，别去 `images/` 里翻——没被正文引用的那几十张往往是**附录表格/图版的扫描页**（`vision_analyze` 一验即知），不是封面。此时「真实封面」只能外部取。
+- **用了 pandoc 的 `--epub-cover-image=<绝对路径>` 就不用再手写注入脚本**：它自动生成 `text/cover.xhtml`、写 `<meta name="cover" content="cover_jpg"/>`、给 item 加 `properties="cover-image"`、并把它排在 spine 第一位。验收就查这四项 + 用 PIL 读出的像素尺寸，再 `vision_analyze` 复核封面上的**书名/卷次/副标题/出版社**与本书一致（防止取到第二卷，或取到 3D 立体展示图）。
+- **换封面只改一个文件**：把封面源码放项目根（`cover.jpg`），finalize 脚本里写死绝对路径；重建后 EPUB 内 `EPUB/media/cover.jpg` 自动替换，其余元素（封面页、meta、spine）不用动。
 
 ## 来自「军事史大图版（体积 / 管道 / 一次性装配链）」
 
