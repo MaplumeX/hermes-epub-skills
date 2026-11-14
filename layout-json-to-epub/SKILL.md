@@ -94,22 +94,22 @@ description: 从 layout.json 版面数据提取书籍全文为干净 Markdown/EP
 
 | 篇 | 读法 | 什么时候读 | 条目 |
 |---|---|---|---|
-| M1 `mechanisms/inputs.md` | S8 多文件 / 有外部协作 | 多个 JSON、分卷 zip、超大附件、图片包、要先发图片清单 | 14 |
-| M2 `mechanisms/page-break-merge.md` | **必读** | 页末半句 + 下页半句被切成两段；改动了任何合并逻辑 | 24 |
-| M3 `mechanisms/notes.md` | S2 / S3 有注释 | 书里有任何注释形式，或上标与注释条目对不上 | 89 |
-| M4 `mechanisms/figures.md` | S5 有插图 | 有插图/图组/图目录，或图题位置不对、丢题注、插页切断正文 | 56 |
-| M5 `mechanisms/tables-math.md` | S1 / S4 有公式或表格 | 有表格（HTML/双栏/rowspan）或公式（MathML/裁图/散落 LaTeX） | 58 |
+| M1 `mechanisms/inputs.md` | S8 多文件 / 有外部协作 | 多个 JSON、分卷 zip、超大附件、图片包、要先发图片清单 | 18 |
+| M2 `mechanisms/page-break-merge.md` | **必读** | 页末半句 + 下页半句被切成两段；改动了任何合并逻辑 | 31 |
+| M3 `mechanisms/notes.md` | S2 / S3 有注释 | 书里有任何注释形式，或上标与注释条目对不上 | 164 |
+| M4 `mechanisms/figures.md` | S5 有插图 | 有插图/图组/图目录，或图题位置不对、丢题注、插页切断正文 | 68 |
+| M5 `mechanisms/tables-math.md` | S1 / S4 有公式或表格 | 有表格（HTML/双栏/rowspan）或公式（MathML/裁图/散落 LaTeX） | 68 |
 | M6 `mechanisms/quotes.md` | 需引文排版时 | 学术书：要把整段转引原文排成引用格式，且要区分作者分析段 | 7 |
-| M7 `mechanisms/structure-noise.md` | S6 / S7 或任何页眉噪声 | 页眉页脚边注混进正文、章节标题被误删、标题层级判错 | 46 |
-| M8 `mechanisms/assembly.md` | **必读** | book.md 已就绪要出 EPUB；epubcheck 报错、锚点失效、封面不显示 | 26 |
-| M9 `mechanisms/checks.md` | **必读** | 每轮 build 之后、交付之前 | 19 |
+| M7 `mechanisms/structure-noise.md` | S6 / S7 或任何页眉噪声 | 页眉页脚边注混进正文、章节标题被误删、标题层级判错 | 51 |
+| M8 `mechanisms/assembly.md` | **必读** | book.md 已就绪要出 EPUB；epubcheck 报错、锚点失效、封面不显示 | 49 |
+| M9 `mechanisms/checks.md` | **必读** | 每轮 build 之后、交付之前 | 27 |
 | M10 `mechanisms/external-ref.md` | 需外部参照时 | 要从扫描页读上标、对照英文原版补标记、校对德文/希腊字母 | 16 |
-| M13 `mechanisms/quotes.md`（同文件后半） | 有文件体引文时 | 军事史/档案类：命令、训令、电报、作战摘要整节转 `blockquote`，含切段与边界复核 | 11 |
+| M13 `mechanisms/quotes.md`（同文件后半） | 有文件体引文时 | 军事史/档案类：命令、训令、电报、作战摘要整节转 `blockquote`，含切段与边界复核 | 28 |
 | M14 `mechanisms/tables.md` | S1 / S4 有表格 | 表题加粗（`tcap` vs `tnote`）、表格把正文劈成两半 | 6 |
 
-补充：`references/figure-caption-recovery.md` 是图题恢复的专门方法篇（四类来源穷举 + 六种错位形态），与 M4 配合读。`references/missing-marks-recovery.md` 是「注文齐全、正文缺上标」时的语义补位方法篇（判定顺序 + 锚句规则 + 1..N 验收 + 号型误读预检），与 M3 配合读。`references/layout-sweep-pass.md` 是**定稿前的全书排版通读**方法篇（逐章派 agent 的口径、图表位置六类问题、机械修复规则与两个必踩的 off-by-one/丢块坑、报而不改清单），与 M4/M5/M6 配合读。
+补充：`references/figure-caption-recovery.md` 是图题恢复的专门方法篇（四类来源穷举 + 六种错位形态），与 M4 配合读。`references/missing-marks-recovery.md` 是「注文齐全、正文缺上标」时的语义补位方法篇（判定顺序 + 锚句规则 + 1..N 验收 + 号型误读预检），与 M3 配合读。**`references/endnote-stream-parsing.md` 是章末数字尾注的机械层方法篇（按「期望序号」流式切分、块尾裸数字/方括号/`^{N①}` 合体/表内 `<eq>` 四类捞回、建链层三个静默 bug），凡 S2 命中「章末数字」先读它**。`references/layout-sweep-pass.md` 是**定稿前的全书排版通读**方法篇（逐章派 agent 的口径、图表位置六类问题、机械修复规则与两个必踩的 off-by-one/丢块坑、报而不改清单），与 M4/M5/M6 配合读。
 
-**篇与篇之间已做交叉索引**：每篇头部有 `## 相关篇`（该机制与哪些邻篇相交、为什么，共 35 条指针）；跨两个机制的实测结论在条目下方标 `双归属 → **Mx**`（21 条），正文只在主归属篇写一份。读到「这件事好像该在另一篇」时，先看这两个标记。
+**篇与篇之间已做交叉索引**：每篇头部有 `## 相关篇`（该机制与哪些邻篇相交、为什么，共 37 条指针）；跨两个机制的实测结论在条目下方标 `双归属 → **Mx**`（21 条），正文只在主归属篇写一份。读到「这件事好像该在另一篇」时，先看这两个标记。
 
 **改互链不要直接改 md**：`references/mechanisms/*.md` 是生成产物。互链表在 `scripts/mechanism_links.json`（`REL` + `DUAL`），改完跑 `python3 scripts/apply_mechanism_links.py`（幂等，可反复跑）。
 
@@ -130,6 +130,14 @@ description: 从 layout.json 版面数据提取书籍全文为干净 Markdown/EP
 | 附录长表断成两张、残留「(续前表)」 | M2（两半首行结构相似度 ≥0.9 才合并；循环遇「不合并」别 break） |
 | epubcheck 报 `element "eq" not allowed here` | M5（OCR 塞进单元格的 `<eq>^{N}</eq>` 伪标签） |
 | 注释编号出现 `1,2,3,1,5` | M3（按出现顺序重编号） |
+| 某章「正文上标多、注文条目少」，逐条查又都对不上 | M3（注文被并进上下条：按缺失号在注文流里定点切开，不要报缺口） |
+| 双卷合订后某章下半段上标全消失、该章 marks 远少于 notes | M3（下册重复前置页的 `注释` 标题卡住状态机：extract 阶段丢弃前置页，不能只在 build 跳过） |
+| 某章注文一条不出（noteref 正常、字符数正常），只剓一个号的 `enref-…` 为 0 | M3（注文查找键失配：`PLAN` 手写标题 ≠ 章节表章名，改为前缀匹配） |
+| 链接总数比预期少，但没有「无落点注文」 | M3（嵌套坏 token `{{N:{{C:①}}}}`，全书扫描解包） |
+| 引文大面积漏包/误包，要成批重包 | `references/mechanisms/quotes.md`「整章重包」：overlay 前缀表 + 两侧归一化 + 日期标题折入 + 派发口径 |
+| 目录里出现「亲爱的父母」「第137步兵师的将士们」这类条目，或引文被劈成「标题＋多块」 | `references/mechanisms/quotes.md`「收尾三修」：信件抬头/呼语被当 h2，转 `.qsig` 折入引文；碎片标题降回 `<p>` |
+| 合并相邻引文块后，一块里出现两条互不相干的引语 | `references/mechanisms/quotes.md`「收尾三修」：断块合并要加「前块末字符不是数字」闸（否则章首题记被并入） |
+| 附录编成表里「*军长：…少将坦克第4师坦克第7师摩托化第29师」挤成一行 | `references/mechanisms/quotes.md`「收尾三修」：番号前补 `<br/>` → 再按 `<br/>` 拆段，一段一单位 |
 | 两套注释的缺口互相掩盖 | M3（先跑 `diag_two_note_systems.py`） |
 | 译注整章为空 | M3（`ref_text` 独立块类型 / 译注落在 `table` 块里） |
 | 图没有标题 | M4（`chart_caption`，不是 `image_caption`） |
@@ -168,6 +176,11 @@ description: 从 layout.json 版面数据提取书籍全文为干净 Markdown/EP
 | **校验全绿但成品是错的** | M9（解包抽读 xhtml） |
 | 注释序列 `1..N` 严格递增、链接全通，但个别落点明显挂错了句子 | M3（缺号被"另插同号"补圆；`insert` 必须逐条回注文语义复核，说明里标明哪几条是补的） |
 | 圈码改判成注号后整章序列错位一格（`…55, 57, 58, 38, 60…`） | M3（改判必须排在章内重编号之后：renumber → 改判 → drop → insert） |
+| 注文数与正文上标数差一大截、但注文其实都在 | M3（注释区 `ref_text`/`text` 混排，逐块判块类型会漏一半；按「期望序号」流式切分） |
+| 合并后成品里出现 `</p></blockqu 驶员…` 这类半截标签 | `references/barbarossa-unleashed-case.md`（续段被拼进引用块的内层 `</p>`；续段要按节点类型 `p`/`li`/`q` 分别拼接） |
+| epubcheck 成片报 `RSC-012: Fragment identifier is not defined`（几十上百条），而 `validate_epub.py` 只报「无效 0」 | `references/barbarossa-unleashed-case.md`「回链要按有没有落点生成」：↩ 不能用「该号有注文」决定，要用 `id="enref-…"` 是否真存在；build 末尾统一正则剔回链（`div.en` 与 `div.fn` 两类都要跑） |
+| epubcheck 报 `WARNING(NAV-011): "toc" nav must be in reading order`，两条指向同一 `#ch-plate` | `references/barbarossa-unleashed-case.md`（多段图版章各自 `# 图版`，h1 id 重复 → 改 `ch-<起始 pk>`） |
+| 合订本体积超 Telegram 20 MB（单册 7 MB → 合订 39 MB） | 全图重采样 `ffmpeg -vf "scale='min(1000,iw)':-2" -q:v 5`（38→14 MB，成品 15.4 MB），再 `ln -sfn images_opt images`，markdown 不动；见 `references/barbarossa-unleashed-case.md` |
 
 ## 交付清单（不可协商项）
 
@@ -208,13 +221,16 @@ description: 从 layout.json 版面数据提取书籍全文为干净 Markdown/EP
 | `barbarossa-derailed-case.md` | 格兰茨《巴巴罗萨脱轨》第一卷：四册 A→C→B→D 错位定序（A 册含罗马数字前置页）、第八章章名整体缺失、章锚点吞首节、附录一图版编号说明被误判为页脚注、封底广告混进参考文献、块尾裸数字是唯一可机械捞回的上标 |
 | `figure-caption-recovery.md` | 方法记录：图题/表题恢复的四类来源与六种错位（与 M4 配合读） |
 | `defeat-to-victory-case.md` | C.J.迪克《从失败到胜利》两册相接：章末数字注 223 条 + 页脚圈码译注 11 条、**3 处圈码实为数字注号**（序列校验全绿也不代表落点正确）、表注与「被甩到页脚的正文」同块类型、章名缺「第N章」前缀、注释区内混 title 块、地图图题印在图内靠 vision 读、`<eq>1^{2}</eq>` 要保留前导数字 |
+| `marx-philosophy-2vol-case.md` | 《马克思主义哲学的历史和现状》上/下卷（自建 book.html 管线）：pandoc 2.17 的 `--epub-chapter-level`、章节 id 冲突引发 NAV-011、ncx `dtb:uid` 与 opf identifier 必须一致、篇名页勿整页输出、署名行空格被 clean_spaces 吞、章首页标题整行丢、下卷封面由工卷实拍改卷次 |
+| `barbarossa-unleashed-case.md` | 卢瑟《巴巴罗萨：德国入侵苏联的内幕》全 2 册：上册三文件 542 页连续切分（无册界，止于第八章中段）、章末数字尾注每章 1 起 + 页脚圈码译注、图版 64 图夹在第四/五章之间、`^{N①}` 合体上标、上标被印成 `[7]`/`[1]` 两处、引文判定只能靠「前段以 `：` 结尾」（bbox 无缩进信号）；**下册 3 文件 588 页（偏移 +481/+681/+881），重复前置 30 页的 `注释` 标题会把状态机卡死（第八章 220 个上标被当注文吞）、第八章跨两册且注释在第二册、附录 `[N]` 独立注号只转位置>0、46 条注文被并进上下条需按缺失号定点切开、两段图版章 h1 同 id 招 NAV-011、合订超 20 MB 必须重采样图、分卷图包缺卷表现为「解出 0 字节」** |
 
 ## 本技能的结构与维护
 
-三层：本文件（入口：开关表 + 主线 + 症状表 + 交付清单）→ `references/mechanisms/`（按**机制**，11 篇 / 12 节，M6 与 M13 同文件）→ `references/*-case.md`（按**书**，15 篇）。
+三层：本文件（入口：开关表 + 主线 + 症状表 + 交付清单）→ `references/mechanisms/`（按**机制**，11 篇 / 12 节，M6 与 M13 同文件）→ `references/*-case.md`（按**书**，17 篇）。
 
 - **新学到的东西先判归属**：换本书还会踩 → 追加到对应机制篇末尾；只在某本书成立 → 进该书 case。**不要往本文件加机制细节**——它曾因 9 个「变体」各复述一遍同一机制膨胀到 85 K 字符（跨页合并被写了 16 遍）
 - **改完结构必跑** `scripts/verify_skill_migration.py <旧SKILL.md> <技能目录>`：抽出旧版全部行首加粗结论逐条比对，**0 丢失**才算完成（上一次基线：298 条结论 / 392 条条目，含 35 条互链指针 + 21 条双归属标记）
+- **推 GitHub 前先对仓库副本做一次内容丢失体检**（`diff -rq` 逐文件、被重写的机制篇查 H1 是否换人、坏了先补回再推），索引表与 README 的篇数/条目数要实算同步——流程与五处计数清单见 `references/skill-structure.md`「发布到 GitHub」
 - **一条结论可能双归属**（例「合并后圈码标记挂到错误页底注」＝跨页合并的连带故障 + 注释配对）：放主归属那篇，另一篇加一行 `双归属 → **Mx**（原因）` 指针，不要两处各写一份
 - **改开关表要复查「必读篇」**：M2 / M8 / M9 是主线必经，不由任何开关决定，必须无条件读
 - **大改结构前先给骨架提案**（分层方案 + 体积预估 + 防漏办法），用户确认后再动手——用户明确要求过「先做一份新骨架给你看」

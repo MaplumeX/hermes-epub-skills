@@ -10,8 +10,8 @@
 layout-json-to-epub/
 ├── SKILL.md              # 入口：开关表 + 主线 + 症状检索表（约 7 K 字符，可通读）
 ├── references/
-│   ├── mechanisms/       # 11 篇机制 / 12 节，按需加载（合计约 110 K 字符）
-│   ├── *-case.md         # 15 份案例，一本书一份，只看「差异清单」
+│   ├── mechanisms/       # 11 篇机制 / 12 节，按需加载（合计约 127 K 字符）
+│   ├── *-case.md         # 17 份案例，一本书一份，只看「差异清单」
 │   └── ...
 └── scripts/              # 27 个可单独运行的诊断 / 修复 / 校验脚本
 ```
@@ -41,17 +41,17 @@ layout-json-to-epub/
 
 | 篇 | 内容 | 条目 |
 |---|---|---|
-| M1 `inputs.md` | 多文件合订、分卷 zip、20 MB 上限、图片清单先发 | 14 |
-| M2 `page-break-merge.md` | 跨页断句合并，及合并引发的连带故障（错页、y 坐标、附录） | 24 |
-| M3 `notes.md` | 多套注释识别、编号修复、双向链接 | 89 |
-| M4 `figures.md` | 图题/表题四类来源、六种错位、面板归属、插入位置 | 56 |
-| M5 `tables-math.md` | grid 转换、rowspan、双栏、`wrap_math`、单元格内公式 | 58 |
+| M1 `inputs.md` | 多文件合订、分卷 zip、20 MB 上限、图片清单先发 | 18 |
+| M2 `page-break-merge.md` | 跨页断句合并，及合并引发的连带故障（错页、y 坐标、附录） | 31 |
+| M3 `notes.md` | 多套注释识别、编号修复、双向链接 | 164 |
+| M4 `figures.md` | 图题/表题四类来源、六种错位、面板归属、插入位置 | 68 |
+| M5 `tables-math.md` | grid 转换、rowspan、双栏、`wrap_math`、单元格内公式 | 68 |
 | M6 `quotes.md` | 学术书引文段判定（四轮演进到盲读清单） | 7 |
-| M7 `structure-noise.md` | 页眉边注竖排书名、标题层级与子标题判定 | 46 |
-| M8 `assembly.md` | pandoc 参数、拆章锚点、封面注入、元数据 | 26 |
-| M9 `checks.md` | 三道校验口径，以及「校验全绿但成品是错的」 | 19 |
+| M7 `structure-noise.md` | 页眉边注竖排书名、标题层级与子标题判定 | 51 |
+| M8 `assembly.md` | pandoc 参数、拆章锚点、封面注入、元数据 | 49 |
+| M9 `checks.md` | 三道校验口径，以及「校验全绿但成品是错的」 | 27 |
 | M10 `external-ref.md` | 对照英文原文 / DJVU / 扫描页读上标 / 德文术语 | 16 |
-| M13 `quotes.md`（同文件后半） | 军事史/档案类：文件引文（命令/电报/作战摘要）整节转 blockquote | 11 |
+| M13 `quotes.md`（同文件后半） | 军事史/档案类：文件引文（命令/电报/作战摘要）整节转 blockquote | 28 |
 | M14 `tables.md` | 表题加粗（`tcap` vs `tnote`）、表格把正文劈成两半 | 6 |
 
 M2 / M8 / M9 是主线必读，其余按开关命中才读。
@@ -66,6 +66,7 @@ M2 / M8 / M9 是主线必读，其余按开关命中才读。
 - **插图/表格插入位置**：不切断正文、上下加分隔线、续文接回（`scripts/reflow_inserts.py`）
 - **引文段落转引用格式**：区分「整段转引他人原文」与「作者自己的分析段（即使段末带出处）」，含跨段引文的识别与分块（`scripts/blind_read_quotes.py`）；军事史类的整节文件引文另有 `references/mechanisms/quotes.md` 后半篇 + `references/layout-sweep-pass.md`
 - **注文齐全但正文缺上标**：先查自身渲染路径（表格 `<eq>`、表题表注、注释条目正文、边界页），再机械捞回、再语义补位，剩下的才进缺口清单（`references/missing-marks-recovery.md`）
+- **章末数字尾注的机械层**：注释区按「期望序号」流式切分、块尾裸数字 / `[N]` 方括号 / `^{N①}` 合体 / 表内 `<eq>` 四类捞回、建链层三个静默 bug（`references/endnote-stream-parsing.md`）
 - **保真度自检**：字符数比值 + 块级清单 + 图片引用集合差
 
 ### `web-to-epub/`
@@ -74,7 +75,7 @@ M2 / M8 / M9 是主线必读，其余按开关命中才读。
 
 ## 脚本
 
-`scripts/` 下 29 个脚本都能单独跑，大多接受「输入文件 + 退出码即结论」的形态：
+`scripts/` 下 27 个脚本都能单独跑，大多接受「输入文件 + 退出码即结论」的形态：
 
 ```bash
 # 校验成品

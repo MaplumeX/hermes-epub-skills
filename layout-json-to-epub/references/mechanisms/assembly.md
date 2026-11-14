@@ -117,3 +117,14 @@
 - **不要用 `<p class="x">…</p>` 在 markdown 里写带样式的段落块**（症状最隐蔽）：块首是 raw inline HTML，pandoc 只把 `<p class="tf">` 当行内标签、后面照 markdown 解析——注文以 `1. ` 开头时立刻被转成 `<ol>` 嵌进 `<p>`，产物是 `<p class="tf"><ol><li>…</p></li></ol>`；`validate_epub.py` 报 3 个文件 `mismatched tag`，而 **pandoc exit 0、日志里只有 `Could not load translations` 那类良性噪声**。正确写法是 **fenced div**：`::: cap` / `**表1.1：…**` / `:::`，渲染成 `<div class="cap"><p>…</p></div>`；CSS 选择器跟着改成 `div.cap p {…}`（留着 `p.cap` 就不生效）。cap / tf / legend / en / tn / ref 六类要一次全换，换一半会剩下几处同样的 mismatched tag。
 - **div 里以数字开头的条目同样会被当有序列表**：用 `<span class="enn">1.</span> 文本` 起头（行首是 `<` 不是数字）比 `1\.` 更稳，也不会被后续的 `fix_text` 二次转义。
 - **`--epub-chapter-level=1` 配 `#` 章标题** 时，`#### 注释` 会落在本章文件内（不另起文件），注释区与本文件双向锚点天然有效；只有书末「译者注（原书页脚注）」是跨文件，交给 `fix_epub_links.py`（本书 28 处）。
+
+## 来自「中译本学术专著·单册三段合订（440 页 / 页脚圈码每页重编）」
+
+- **pandoc 2.17（Ubuntu 自带）没有 `--split-level`**：报 `Unknown option --split-level`。拆章改用 `--epub-chapter-level=1`（2.x 与 3.x 都认）。先 `pandoc --version` 再写命令行，别照抄 3.x 的例子。
+- **pandoc 的 HTML reader 会丢弃 `<p class="x">` 的 class**（Para 节点不支持 class，只有 Div/Span 支持）。症状：注释区、目录条目、章末思考题全部按正文样式渲染（缩进 2em、字号一样），CSS 里写的 `p.note`／`p.toc`／`p.q` 一条都不生效。修法：一律写成 `<div class="x"><p>…</p></div>`，CSS 选择器改 `div.x p`。这个坑对「用 HTML 作为 pandoc 输入」的整条管线都成立。
+- **`epub:type` 能穿过 `-f html` 保留**：`<a epub:type="noteref">`、`<div epub:type="footnote">`、`<a epub:type="backlink">` 在产物 xhtml 里都在（pandoc 还会同时补一个同名 class）。要 Apple Books / KOReader 的弹注体验就加上。
+- **带花括号的行内公式 token 不能用 `[^}]*` 匹配**：`{{M:x^{2}}}` 会被截在 `x^{2` 处（`}` 提前终止），替换表查不到 key，成品里直接露出 `x^{2}`、`\sqrt{x}` 原文。正则写 `\{\{M:((?:[^{}]|\{[^{}]*\})*)\}\}`（允许一层嵌套），别用非贪婪 `(.*?)`——同一段有多个 token 时非贪婪也会错位。
+- **去 OCR 空格的 `re.sub(r'(?<=[CJK])\s+(?=[CJK])', '', t)` 会连换行和全角缩进一起吃掉**：本书 A p189 的经济学研究计划是「第一篇：资本一般 ⏎ 　1. 商品 ⏎ 　2. 货币…」的树状版式，被这条规则压成一行。改 `[ \t]` 而不是 `\s`，多行块（树状图、诗歌、表格式排版）才不会塌。
+
+- **豆瓣按 ISBN 直达条目，比搜索稳**：`https://book.douban.com/isbn/<ISBN>/` 会 302 到 `subject/<id>/`（本书 ISBN-10 `7-305-04383-4` 直接命中 subject/1492091）。取图：`#mainpic img` 的 `src` 把 `/view/subject/s/` 改成 `/view/subject/l/` 即大图（600×817 左右）；`curl` 要带 `-e https://book.douban.com/` 与普通 UA，否则 403。取回后用 vision 逐字复核书名/卷次/主编/社名，与 layout.json 的封面页（p0-p1）对照——本书封面上的「研究生教学用书」「教育部研究生工作办公室推荐」「（上卷）/(Volume I)」三项与源数据完全一致才采用。
+- **不要用程序画封面兜底**：本技能明确要求真实书影。只有豆瓣/电商/出版社官网都取不到时才退回程序合成，并在交付说明里写明「未取到真实书影」。
