@@ -1,13 +1,28 @@
 ---
 name: layout-json-to-epub
-description: 从 layout.json 版面数据提取书籍全文为干净 Markdown/EPUB。
+description: 从 layout.json（PDF/扫描件的 OCR 版面数据）提取书籍全文，整理成干净的 Markdown/EPUB：目录、注释双向链接、图题表题恢复、表格与 MathML 公式。当用户上传 layout.json、要求把扫描书/PDF 转成 EPUB 或干净 markdown、或修脚注编号与图注位置时使用。Use when converting layout.json (OCR layout of a scanned book) into clean Markdown/EPUB.
+license: MIT
+metadata:
+  author: MaplumeX
+  version: "1.1"
+  repository: "https://github.com/MaplumeX/hermes-epub-skills"
+  tested-hosts: "Hermes Agent"
 ---
 
 # layout.json → 干净 Markdown/EPUB
 
 ## 触发条件
 
-用户发送 layout.json 文档（保存在 `~/.hermes/cache/documents/doc_*_layout.json`），要求「提取全文并整理为干净的 Markdown/EPUB，整理好目录、脚注、引用」。
+用户发送 layout.json 文档（Hermes 默认落盘在 `~/.hermes/cache/documents/doc_*_layout.json`，其他客户端见下节），要求「提取全文并整理为干净的 Markdown/EPUB，整理好目录、脚注、引用」。
+
+## 宿主适配（非 Hermes 客户端先读这段）
+
+本技能在 Hermes Agent 上实测成型，下列四件事各客户端做法不同；正文与 `references/` 里出现的 `Hermes venv`、`vision_analyze`、`delegate_task`、`~/.hermes/...` 都是实测记录，按本节换算成你所在客户端的等价物。**判据、阈值、校验口径与宿主无关。**
+
+- **附件落盘位置**：Hermes 把用户上传的文件写到 `~/.hermes/cache/documents/`（layout.json 形如 `doc_<hash>_layout.json`）；多数客户端没有这种缓存，直接向用户要文件路径。
+- **读扫描页的视觉能力**：Hermes 走辅助视觉客户端（`scripts/read_marks_from_scan.py` 自动探测；也可用 `vision_analyze` 工具逐页读）。没有 Hermes 时该脚本走通用分支——设 `VISION_API_KEY` / `VISION_BASE_URL` / `VISION_MODEL`（缺省回落 `OPENAI_*`）即可接任意 OpenAI 兼容视觉接口，断点续跑逻辑不变。
+- **并行子任务**：Hermes 用 `delegate_task`（上限 10 并发）；Claude Code 等用各自的子代理机制；都没有就串行分批，批次容量口径（8–16 个小文件 ≈ 20–40 K 字）不变。
+- **终端行为差异**：Hermes 的 terminal 会拒绝含 `&` / `$` 的行、遇二进制目录抛 `embedded null byte`，所以「改动脚本用 write_file 写文件再执行」；别的 shell 没这些限制，但照此做法无副作用。
 
 ## 开工前读什么（固定顺序）
 

@@ -41,6 +41,8 @@
 5. **逐字搬运，不改措辞**。保留实测数字与原节出处，每篇按来源节分组（`## 来自「…」`），便于回溯。
 6. **机械核对收尾**：`scripts/verify_skill_migration.py <旧SKILL.md> <技能目录>`，抽出旧版全部行首加粗结论逐条比对，**0 丢失**才算完成。上一次基线：298 条结论、392 条条目（含 35 条互链指针 + 21 条双归属标记）。
 
+   **「结论条数」那个数字会随喂进去的文件而变，不要当回归判据**：拿现版 SKILL.md 当旧版喂进去只报「13 条结论 / 570 条目」（旧基线 298 条来自重构前 85 K 的那版），照样是合法的「未找到 0 条」。判据只有两条：`未找到 0 条` + `机制篇条目合计` 与实算相符。
+
 ## 维护规则
 
 - **新学到的东西先判归属**：换本书还会踩 → 追加到对应机制篇末尾；只在某本书成立 → 进该书 case。**不要往 SKILL.md 加机制细节**，那是它膨胀到 85 K 的原因。
@@ -86,7 +88,8 @@
 ## 发布到 GitHub
 
 - 仓库 `MaplumeX/hermes-epub-skills`，本地克隆在 `/root/skills_upload/hermes-epub-skills`（`~/.hermes/skills` 本身不是 git 仓库，直接在那儿 `git status` 只会报 not a repository——先找克隆，别以为没仓库）
-- 流程：`cp -r ~/.hermes/skills/productivity/{layout-json-to-epub,web-to-epub} .` → 删 `__pycache__` / `*.pyc` → `git add -A` → commit → push
+- 流程：同步 → 删 `__pycache__` / `*.pyc` → `git add -A` → commit → push
+- **同步用 Python `shutil.copytree(src, dst, dirs_exist_ok=True)`，不要指望 `rsync`**（这台机器没装，`FileNotFoundError: 'rsync'`）；`cp -r src dst` 在 dst 已存在时会把源**嵌套**进去（`dst/layout-json-to-epub/layout-json-to-epub`），别用。同步完必须 `diff -rq <live技能> <仓库副本> -x __pycache__` 输出为空（等价 IDENTICAL）才算干净
 
 ### 发布前必做：内容丢失体检（用户说「推送更新」时最容易踩）
 
@@ -111,9 +114,20 @@
 
 计数一律实算：`ls scripts/*.py | wc -l`、`ls references/*-case.md | wc -l`、机制篇字符和用 Python 求和。本会话 README 的「10 篇 / 17 份案例 / 25 个脚本」全是旧值（实为 11 / 17 / 27），照抄就会写错。
 
+**条目数会长期漂移，每次推送重算全部 12 行，不要只改新增那一行。** 机制篇是「往末尾追加」的维护方式，条目数没人跟；某次推送前实测索引 M3 写 89 而实算 164、M8 写 26 而实算 49，M1/M2/M4/M5/M7/M9/M13 同样低报。实算口径（已复核：M6 的 7、M10 的 16、M14 的 6 本来就对，说明口径正确、只是数字旧）：
+
+- 按 `## ` 切节，**丢掉 `## 相关篇` 整节**，数剩下的 `- ` 开头的行
+- `mechanisms/quotes.md` 一个文件装两篇：在 `\n# M13` 处切开，前半归 M6、后半归 M13
+- 12 个条目数相加 ≈ `verify_skill_migration.py` 报的「机制篇条目合计」（差值正是被丢掉的 37 条相关篇指针：533 + 37 = 570）
+- 机制篇字符总量同步改（本会话 110 K → 127 K），三处都写：SKILL.md 结构段、本文件三层表格、README 结构树
+
+**README 不在技能目录里，`diff -rq` 查不到它**——提交前单独读一遍仓库根 `README.md`，核结构树三个数字 + 机制表 12 行条目数 + `### N 篇机制` 标题；新增了 `references/` 根目录的方法篇（`endnote-stream-parsing.md`、`missing-marks-recovery.md` 这类不带 `-case` 的）时，在 README「关键内容」补一行指针。
+
 - **`apply_mechanism_links.py` 只重注入 `## 相关篇` 与 `双归属` 行，不重建正文**：所以手工补回的正文不会被它冲掉；但新增或改名机制篇时要同步 `scripts/mechanism_links.json` 的 `FNAME`，否则该篇互链不再被维护。
 - **gh 默认活动账号是 rualons，推这个仓库必须显式指定**：`GH_TOKEN=$(gh auth token --user MaplumeX) git push origin HEAD`（rualons 对该仓库只有 `pull`，本就推不动；`gh auth status` 里显示的 active 账号不代表这次 push 用了谁）
 - **commit 作者邮箱必须写 `MaplumeX@users.noreply.github.com`（大小写跟登录名一致）**：GitHub 按**邮箱**归属作者，小写 `maplume@users.noreply.github.com` 命中另一个真实账号 `Maplume`（id 141901647），推送成功但提交显示在那个账号下。历史提交用 `git log --pretty='%an <%ae>'` 对照，新提交邮箱与它们不一致就是冒烟点；写错了用 `git commit --amend --reset-author --no-edit` + `git push --force-with-lease` 修
+- **推之前跑格式体检**：`python3 scripts/check_skill_format.py <技能目录> ...`（查 name 与目录同名、description ≤1024 与「何时用」、标准外字段、正文 token 估算、scripts 语法）——`exit 0` 才推；它只认 Agent Skills 标准，不认 Hermes 私有字段。
+- **frontmatter 保持通用**：只写 `name` / `description` / `license` / `compatibility` / `metadata`（Agent Skills 开放标准）。不写客户端私有字段（如 Hermes 的 `platforms:`）——写回去会让其他客户端忽略或报错；宿主专有差异统一写在 SKILL.md「宿主适配」一节。
 - 推完核远端，别只信 push 的输出：`git ls-remote origin master` 对 SHA、`gh api repos/MaplumeX/hermes-epub-skills/contents/<path> --jq '.size'` 对文件大小、目录用 `--jq 'length'` 对数量、`gh api repos/MaplumeX/hermes-epub-skills/commits/<sha> --jq .author.login` 对作者归属
 
 ## 案例：哈维《资本的限度》的引文判定四轮演进

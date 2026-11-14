@@ -104,9 +104,30 @@ python3 layout-json-to-epub/scripts/reflow_inserts.py book.md book_final.md
 2. **数量对 ≠ 编号对。** 必须校验「严格递增序列」和「正文序列 == 注释序列」，并检查锚点 id 唯一性。
 3. **交付前换新文件名 + 报 md5。** 同名附件反复交付时，对方点开的往往是旧版。
 
-## 用法
+## 安装
 
-这些文件是 [Hermes Agent](https://github.com/NousResearch/hermes-agent) 的技能目录格式（`SKILL.md` + `references/` + `scripts/`）。放进 `~/.hermes/skills/<category>/` 即可被 agent 按需加载；也可以直接当人工操作手册读——`SKILL.md` 与 `mechanisms/` 里的每一条都是可直接执行的判据。
+两个技能都是 [Agent Skills](https://agentskills.io/specification) 开放格式：目录名 = `name`，frontmatter 只用 `name` / `description` / `license` / `compatibility` / `metadata`（不依赖任何客户端私有字段）。
+
+```bash
+git clone https://github.com/MaplumeX/hermes-epub-skills.git
+cd hermes-epub-skills
+
+# Hermes Agent
+cp -r layout-json-to-epub web-to-epub ~/.hermes/skills/productivity/
+
+# Claude Code（个人级；项目级则放到 .claude/skills/）
+mkdir -p ~/.claude/skills && cp -r layout-json-to-epub web-to-epub ~/.claude/skills/
+
+# 其他支持 Agent Skills 的客户端（Codex / Cursor / …）：放进各自的 skills 目录
+```
+
+也可以直接当人工操作手册读——`SKILL.md` 与 `mechanisms/` 里的每一条都是可直接执行的判据。
+
+**宿主差异**看 `layout-json-to-epub/SKILL.md` 的「宿主适配」一节：附件落盘位置、扫描页视觉读取、并行子任务、终端行为四处各客户端不同；**判据、阈值、校验口径与宿主无关**。`scripts/read_marks_from_scan.py` 会自动探测 Hermes，找不到就用 `VISION_API_KEY` / `VISION_BASE_URL` / `VISION_MODEL` 接任意 OpenAI 兼容视觉接口。
+
+格式体检：`python3 layout-json-to-epub/scripts/check_skill_format.py layout-json-to-epub web-to-epub`（查 name/目录同名、description、标准外字段、正文 token 估算、scripts 语法；`exit 0` 即合规）。
+
+已知偏离：两个 `SKILL.md` 正文约 11 K / 18 K 字符，超过规范建议的「激活时 <5000 tokens」——这是刻意的取舍（入口要能一口气读完判型并走完主线），细节已拆进 `references/`，由客户端按需加载。
 
 ## License
 

@@ -1,7 +1,13 @@
 ---
 name: web-to-epub
-description: Convert books into EPUB ebooks — website HTML (做epub/制作epub) or Markdown/layout.json pipelines.
-platforms: [linux, macos]
+description: 把网页书源（marxists.org、在线文档、多页 HTML）或 layout.json/Markdown 做成带目录、双向脚注、插图和封面的 EPUB；也能把已有 EPUB 重做目录结构。当用户给一个书籍网址、说「做成 epub / 制作 epub」、发来 layout.json 或 md 想转成电子书、或要求修已有 EPUB 的 TOC 时使用。Convert books (website HTML, layout.json, Markdown) into EPUB, or rebuild an existing EPUB's TOC.
+license: MIT
+compatibility: 需要 Python 3.9+、pandoc 2.17+；epubcheck 校验需 Java。
+metadata:
+  author: MaplumeX
+  version: "1.1"
+  repository: "https://github.com/MaplumeX/hermes-epub-skills"
+  tested-hosts: "Hermes Agent"
 ---
 
 # Web → EPUB

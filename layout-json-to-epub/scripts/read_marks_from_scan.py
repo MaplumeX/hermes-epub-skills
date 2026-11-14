@@ -9,10 +9,13 @@
 三段式（可断点续跑）：
   1) locate  SCAN_PDF=上册.pdf python3 read_marks_from_scan.py locate <book.md> <pages.json> <outdir>
        → 算各章缺号 → 反查承载缺号的扫描页 → 250dpi 裁剪渲染 → outdir/pages_todo.json
-  2) read    /usr/local/lib/hermes-agent/venv/bin/python read_marks_from_scan.py read <outdir>
-       → 逐页调 Hermes 辅助视觉模型，写 outdir/marks_read.json（每页立即落盘，可中断重跑）
-       注：这一段的解释器必须是 Hermes venv（系统 python3 没有 openai 模块）；
-           整段建议 terminal(background=true) 跑，84 页约 30-40 分钟。
+  2) read    python3 read_marks_from_scan.py read <outdir>
+       → 逐页调视觉模型，写 outdir/marks_read.json（每页立即落盘，可中断重跑）
+       注：客户端按两路解析 —— ① 装了 Hermes 的机器上自动用其辅助视觉客户端
+           （设 HERMES_AGENT_ROOT 可指定安装目录，默认探测 /usr/local/lib/hermes-agent 等）；
+           ② 否则用任意 OpenAI 兼容接口：VISION_API_KEY / VISION_BASE_URL / VISION_MODEL
+           （缺省回落到 OPENAI_API_KEY / OPENAI_BASE_URL）。
+           驱动该接口的 python 需装 openai 包；整段建议后台跑，84 页约 30-40 分钟。
   3) apply   python3 read_marks_from_scan.py apply <book.md> <pages.json> <notes.json> <outdir>
        → 三道闸校验后插入锚点 + 附注条目补 ↩，覆盖 book.md（先备份 book.md.bak）
 
@@ -157,14 +160,39 @@ def cmd_locate(book, pages_path, outdir):
           % (sum(len(v) for v in missing_stat.values()), len(jobs), len(todo)))
 
 
+def vision_client():
+    """返回 (client, model)。优先用已安装的 Hermes 辅助视觉客户端，否则退回任意 OpenAI 兼容接口。"""
+    root = os.environ.get('HERMES_AGENT_ROOT', '')
+    cands = [root] if root else ['/usr/local/lib/hermes-agent',
+                                 os.path.expanduser('~/hermes-agent'),
+                                 os.path.expanduser('~/.hermes/hermes-agent')]
+    for c in cands:
+        if c and os.path.isdir(os.path.join(c, 'agent')):
+            sys.path.insert(0, c)
+            try:
+                import agent.auxiliary_client as A          # noqa: E402
+                prov, client, model = A.resolve_vision_provider_client()
+                print('视觉模型: %s / %s' % (prov, model), flush=True)
+                return client, model
+            except Exception as e:                          # 装了但没配好 → 退回兼容接口
+                print('宿主辅助客户端不可用（%s），改用 OpenAI 兼容接口' % e, flush=True)
+                break
+    key = os.environ.get('VISION_API_KEY') or os.environ.get('OPENAI_API_KEY')
+    base = os.environ.get('VISION_BASE_URL') or os.environ.get('OPENAI_BASE_URL')
+    model = os.environ.get('VISION_MODEL') or os.environ.get('OPENAI_MODEL')
+    if not (key and model):
+        sys.exit('找不到视觉模型客户端：设 HERMES_AGENT_ROOT 指向 Hermes 安装目录，'
+                 '或设 VISION_API_KEY / VISION_BASE_URL / VISION_MODEL 使用任意 OpenAI 兼容接口。')
+    from openai import OpenAI                              # noqa: E402
+    print('视觉模型: %s / %s' % (base or 'api.openai.com', model), flush=True)
+    return (OpenAI(api_key=key, base_url=base) if base else OpenAI(api_key=key)), model
+
+
 def cmd_read(outdir):
-    sys.path.insert(0, '/usr/local/lib/hermes-agent')
-    import agent.auxiliary_client as A          # noqa: E402（必须在 venv 解释器下运行）
+    client, model = vision_client()
     todo = json.load(open(os.path.join(outdir, 'pages_todo.json'), encoding='utf-8'))
     nbfile = os.path.join(outdir, 'marks_read.json')
     done = json.load(open(nbfile, encoding='utf-8')) if os.path.exists(nbfile) else {}
-    prov, client, model = A.resolve_vision_provider_client()
-    print('视觉模型: %s / %s' % (prov, model), flush=True)
     import base64, time
     for i, t in enumerate(todo):
         key = 'p%d' % t['pdfpage']

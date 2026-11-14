@@ -6,7 +6,7 @@
     python3 verify_skill_migration.py <旧 SKILL.md> <技能目录>
 
 例：
-    python3 verify_skill_migration.py SKILL.old.md ~/.hermes/skills/productivity/layout-json-to-epub
+    python3 verify_skill_migration.py SKILL.old.md <skill-dir>   # 任意客户端/本地路径均可
 
 扫描技能目录下的 SKILL.md + references/mechanisms/*.md + references/*.md。
 退出码 0 = 全部命中；1 = 有遗漏（逐条打印，必须补完再交付）。
